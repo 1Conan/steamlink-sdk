@@ -1,3 +1,42 @@
+# Fork changes
+
+- Kernel has a working config
+- Added `ford_kexec` which can be build as a module to load new kernels.
+
+## ArchLinux Installation
+
+No permanent modifications will be made to your steamlink! :)
+
+Unpack a recent archlinux armv7 root (see https://os.archlinuxarm.org/os) onto a ext4 formatted
+USB-Stick.
+
+Chroot into it (either on a armv7 compatible device or using qemu-arm-static, you can
+even use the steamlink itself with enabled ssh for this) and install kexec-tools, openssh, netctl,
+and linux-armv7. Set up netctl to use eth0 (wifi may work, i never tried).
+
+Create a directory `/steamlink/factory_test` on your usb stick, create a file `run.sh` inside:
+```bash
+#!/bin/sh
+
+# reset boot failure counter
+fts-set steamlink.crashcounter 0
+
+# mount some stuff
+mount -t proc proc /mnt/disk/proc
+mount -o rbind /sys /mnt/disk/sys
+mount -o rbind /dev /mnt/disk/dev
+
+# load new kernel
+insmod /mnt/disk/boot/kexec_load.ko
+chroot /mnt/disk/ /usr/bin/kexec -l /boot/zImage-mrvl --initrd /boot/initramfs-linux.img --dtb /boot/berlin2cd-dongle.dtb
+chroot /mnt/disk/ /usr/bin/kexec -e
+```
+
+Copy `ford_kexec/kexec_load.ko` to `/boot/kexec_load.ko`, `kernel/arch/arm/boot/zImage` to `/boot/zImage-mrvl`
+and `kernel/arch/arm/boot/dts/berlin2cd-dongle.dtb` to `/boot/berlin2cd-dongle.dtb`.
+
+Plug the stick into your steamlink and plug in power, it should boot, run its S01config script, run the
+`factory_test` script and kexec into the new kernel.
 
 # SDK for the Valve Steam Link
 
